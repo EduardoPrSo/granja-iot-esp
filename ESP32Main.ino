@@ -16,14 +16,6 @@ TinyGsmClient gsmClient(modemGSM);
 DynamicJsonDocument dataJson(1024);
 #define CENTRAL_ID = "CENTRAL1"
 
-//Valores Padrão
-dataJson["temperature_1"] = 0;
-dataJson["humidity_1"] = 0;
-dataJson["luminosity_1"] = 0;
-dataJson["temperature_2"] = 0;
-dataJson["humidity_2"] = 0;
-dataJson["luminosity_2"] = 0;
-
 DynamicJsonDocument parseJson(String payload);
 void setupSIM800L(HardwareSerial &SerialGSM, TinyGsm &modemGSM);
 String startSetup(TinyGsmClient gsmClient, String data);
@@ -38,6 +30,14 @@ void setup() {
     Serial.begin(115200);
 
     dataJson["id"] = CENTRAL_ID;
+
+    //Valores Padrão
+    dataJson["temperature_1"] = 0;
+    dataJson["humidity_1"] = 0;
+    dataJson["luminosity_1"] = 0;
+    dataJson["temperature_2"] = 0;
+    dataJson["humidity_2"] = 0;
+    dataJson["luminosity_2"] = 0;
     
     setupSIM800L(SerialGSM, modemGSM);
     startSetup(gsmClient, dataJson["id"]);
