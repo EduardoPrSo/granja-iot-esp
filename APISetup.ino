@@ -1,64 +1,37 @@
 #include <TinyGsmClient.h>
 #include <ArduinoJson.h>
 
-const char* serverAddress = "149.56.132.14";
-const int serverPort = 3000;
+String setupAPI(TinyGsm modemGSM, HttpClient http, DynamicJsonDocument data) {
+    if (modemGSM.isGprsConnected()) {
+        String endpoint = "/setData";
+        String requestBody = jsonStringify(data);
 
-extern String setupAPI(TinyGsmClient gsmClient, String endpoint, String requestBody) {
-    if (gsmClient.connect(serverAddress, serverPort)) {
-        if (gsmClient.connect(serverAddress, serverPort)) {
-            gsmClient.print(String("POST /") + endpoint + " HTTP/1.1\r\n");
-            gsmClient.print(String("Host: ") + serverAddress + "\r\n");
-            gsmClient.println("Connection: close");
-            gsmClient.println("Content-Type: application/json");
-            gsmClient.print("Content-Length: ");
-            gsmClient.println(requestBody.length());
-            gsmClient.println();
-            gsmClient.println(requestBody);
+        http.beginRequest();
+        http.post(endpoint);
+        http.sendHeader("Content-Type", "application/json");
+        http.sendHeader("Content-Length", String(requestBody.length()));
+        http.beginBody();
+        http.print(requestBody);
+        http.endRequest();
 
-            while (gsmClient.connected()) {
-                String line = gsmClient.readStringUntil('\n');
-                if (line == "\r") {
-                    break;
-                }
-            }
+        int statusCode = http.responseStatusCode();
+        String response = http.responseBody();
 
-            while (gsmClient.available()) {
-                String response = gsmClient.readStringUntil('\n');
-                return response;
-            }
-
-        } else {
-            Serial.println("Falha na conexão com a API!");
-            return "Erro";
-        }
-
-        gsmClient.stop();
+        return response;
+    } else {
+        Serial.println("Falha na conexão GPRS");
+        return "";
     }
 }
 
-extern String startSetup(TinyGsmClient gsmClient, String data) {
-    String response;
-    String body = "{'id': '" + data + "'}";
-    response = setupAPI(gsmClient, "initialSetup", body);
-    return response;
-}
-
-extern String getData(TinyGsmClient gsmClient, String data) {
-    String response;
-    String body = "{'id': '" + data + "'}";
-    response = setupAPI(gsmClient, "getData", body);
-    return response;
-}
-
-extern String sendData(TinyGsmClient gsmClient, DynamicJsonDocument data) {
-    String response;
-    response = setupAPI(gsmClient, "sendData", jsonStrinify(data));
-    return response;
-}
-
-String jsonStrinify(DynamicJsonDocument data) {
+String jsonStringify(DynamicJsonDocument data) {
     String output;
     serializeJson(data, output);
     return output;
+}
+
+extern String setData(TinyGsm modemGSM, HttpClient http, DynamicJsonDocument data) {
+    String response;
+    response = setupAPI(modemGSM, http, data);
+    return response;
 }
