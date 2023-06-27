@@ -35,7 +35,7 @@ AsyncWebServer server(80);
 HttpClient http(gsmClient, serverAddress, serverPort);
 
 void setupSIM800L(HardwareSerial &SerialGSM, TinyGsm &modemGSM);
-String setData(TinyGsm modemGSM, HttpClient http, DynamicJsonDocument data);
+String setData(TinyGsm modemGSM, HttpClient http, String data);
 
 void updateVariables(String data) {
     DynamicJsonDocument newData(1024);
