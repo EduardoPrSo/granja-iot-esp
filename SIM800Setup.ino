@@ -7,6 +7,14 @@
 #define MODEM_TX 27
 #define MODEM_RX 26
 
+extern void escrita_oled_inicio();
+extern void escrita_oled_inicio_falha();
+extern void escrita_oled_rede();
+extern void escrita_oled_rede_falha();
+extern void escrita_oled_conexao();
+extern void escrita_oled_conexao_falha();
+extern void escrita_oled_sucesso();
+
 extern void setupSIM800L(HardwareSerial &SerialGSM, TinyGsm &modemGSM) {
     Serial.println("Setup SIM800L...");
 
@@ -20,35 +28,40 @@ extern void setupSIM800L(HardwareSerial &SerialGSM, TinyGsm &modemGSM) {
     digitalWrite(MODEM_PWRKEY, LOW);
     delay(1000);
     digitalWrite(MODEM_PWRKEY, HIGH);
-
     SerialGSM.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
+    escrita_oled_inicio();
     delay(3000);
 
     Serial.println(modemGSM.getModemInfo());
 
     if (!modemGSM.restart()) {
         Serial.print("Restarting GSM Modem failed");
+        escrita_oled_inicio_falha();
         delay(10000);
         ESP.restart();
         return;
     }
-
+    escrita_oled_rede();
     Serial.print("Aguardando Rede...");
     if (!modemGSM.waitForNetwork()) {
         Serial.println("Fail");
+        escrita_oled_rede_falha();
         delay(10000);
         return;
     }
 
     Serial.println("\nSucesso");
-
+    escrita_oled_conexao();
     Serial.print("Conectando GPRS...");
     if (!modemGSM.gprsConnect("claro.com.br", "claro", "claro")) {
         Serial.println("Fail");
+        escrita_oled_conexao_falha();
         delay(10000);
         return;
     }
 
     Serial.println("\nSucesso");
     Serial.println("Setup SIM800L");
+    escrita_oled_sucesso();
+    delay(2000);
 }

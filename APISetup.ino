@@ -1,10 +1,10 @@
 #include <TinyGsmClient.h>
 #include <ArduinoJson.h>
 
-String setupAPI(TinyGsm modemGSM, HttpClient http, DynamicJsonDocument data) {
+String setupAPI(TinyGsm modemGSM, HttpClient http, String data) {
     if (modemGSM.isGprsConnected()) {
         String endpoint = "/setData";
-        String requestBody = jsonStringify(data);
+        String requestBody = data;
 
         http.beginRequest();
         http.post(endpoint);
@@ -24,13 +24,7 @@ String setupAPI(TinyGsm modemGSM, HttpClient http, DynamicJsonDocument data) {
     }
 }
 
-String jsonStringify(DynamicJsonDocument data) {
-    String output;
-    serializeJson(data, output);
-    return output;
-}
-
-extern String setData(TinyGsm modemGSM, HttpClient http, DynamicJsonDocument data) {
+extern String setData(TinyGsm modemGSM, HttpClient http, String data) {
     String response;
     response = setupAPI(modemGSM, http, data);
     return response;

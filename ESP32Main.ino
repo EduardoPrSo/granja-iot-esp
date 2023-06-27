@@ -6,6 +6,7 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include "ESPAsyncWebServer.h"
+#include <Wire.h>
 
 const char* serverAddress = "149.56.132.14";
 const int serverPort = 3000;
@@ -13,26 +14,25 @@ const int serverPort = 3000;
 const char* ssid = "SistIoTGranja";
 const char* password = "123456789";
 
-String temperature_1;
-String humidity_1;
-String luminosity_1;
-String temperature_2;
-String humidity_2;
-String luminosity_2;
+String central_id = "1";
 
-String setup_temperature_1;
-String setup_luminosity_1;
-String setup_temperature_2;
-String setup_luminosity_2;
+String temperature_1 = "10";
+String humidity_1 = "10";
+String luminosity_1 = "10";
+String temperature_2 = "10";
+String humidity_2 = "10";
+String luminosity_2 = "10";
+
+String setup_temperature_1 = "0";
+String setup_luminosity_1 = "0";
+String setup_temperature_2 = "0";
+String setup_luminosity_2 = "0";
 
 HardwareSerial SerialGSM(1);
 TinyGsm modemGSM(SerialGSM);
 TinyGsmClient gsmClient(modemGSM);
 AsyncWebServer server(80);
 HttpClient http(gsmClient, serverAddress, serverPort);
-
-DynamicJsonDocument dataJson(1024);
-#define CENTRAL_ID  1
 
 void setupSIM800L(HardwareSerial &SerialGSM, TinyGsm &modemGSM);
 String setData(TinyGsm modemGSM, HttpClient http, DynamicJsonDocument data);
@@ -47,18 +47,18 @@ void updateVariables(String data) {
     setup_luminosity_2 = newData["luminosity_2"].as<String>();
 }
 
+extern void setup_display();
+extern void escrita_oled_wifi();
+
 void setup() {
     Serial.begin(115200);
+    delay(1000);
+    Wire.begin();
 
-    dataJson["temperature_1"] = 10;
-    dataJson["humidity_1"] = 10;
-    dataJson["luminosity_1"] = 10;
-    dataJson["temperature_2"] = 10;
-    dataJson["humidity_2"] = 10;
-    dataJson["luminosity_2"] = 10; 
+    delay(1000);
+    setup_display();
+    delay(1000);
 
-    dataJson["id"] = CENTRAL_ID;
-    
     setupSIM800L(SerialGSM, modemGSM);
 
     Serial.print("Setting AP (Access Point)…");
@@ -68,13 +68,14 @@ void setup() {
     Serial.print("AP IP address: ");
     Serial.println(IP);
 
+    escrita_oled_wifi();
+
     server.on("/read_1_temperature", HTTP_GET, [](AsyncWebServerRequest *request){
         int paramsNr = request->params();
         for (int i=0; i < paramsNr; i++) {
             AsyncWebParameter* p = request->getParam(i);
-            dataJson["temperature_1"] = p->value();
+            temperature_1 = p->value();
             Serial.print("Temperature node 1: ");
-            temperature_1 = dataJson["temperature_1"].as<String>();
             Serial.println(temperature_1);
         }
         request->send_P(200, "text/plain", "");
@@ -83,9 +84,8 @@ void setup() {
         int paramsNr = request->params();
         for (int i=0; i < paramsNr; i++) {
             AsyncWebParameter* p = request->getParam(i);
-            dataJson["humidity_1"] = p->value();
+            humidity_1 = p->value();
             Serial.print("Humidity node 1: ");
-            humidity_1 = dataJson["humidity_1"].as<String>();
             Serial.println(humidity_1);
         }
         request->send_P(200, "text/plain", "");
@@ -94,9 +94,8 @@ void setup() {
         int paramsNr = request->params();
         for (int i=0; i < paramsNr; i++) {
             AsyncWebParameter* p = request->getParam(i);
-            dataJson["luminosity_1"] = p->value();
+            luminosity_1 = p->value();
             Serial.print("Luminosity node 1: ");
-            luminosity_1 = dataJson["luminosity_1"].as<String>();
             Serial.println(luminosity_1);
         }
         request->send_P(200, "text/plain", "");
@@ -105,9 +104,8 @@ void setup() {
         int paramsNr = request->params();
         for (int i=0; i < paramsNr; i++) {
             AsyncWebParameter* p = request->getParam(i);
-            dataJson["temperature_2"] = p->value();
+            temperature_2 = p->value();
             Serial.print("Temperature node 2: ");
-            temperature_2 = dataJson["temperature_2"].as<String>();
             Serial.println(temperature_2);
         }
         request->send_P(200, "text/plain", "");
@@ -116,9 +114,8 @@ void setup() {
         int paramsNr = request->params();
         for (int i=0; i < paramsNr; i++) {
             AsyncWebParameter* p = request->getParam(i);
-            dataJson["humidity_2"] = p->value();
+            humidity_2 = p->value();
             Serial.print("Humidity node 2: ");
-            humidity_2 = dataJson["humidity_2"].as<String>();
             Serial.println(humidity_2);
         }
         request->send_P(200, "text/plain", "");
@@ -127,9 +124,8 @@ void setup() {
         int paramsNr = request->params();
         for (int i=0; i < paramsNr; i++) {
             AsyncWebParameter* p = request->getParam(i);
-            dataJson["luminosity_2"] = p->value();
+            luminosity_2 = p->value();
             Serial.print("Luminosity node 2: ");
-            luminosity_2 = dataJson["luminosity_2"].as<String>();
             Serial.println(luminosity_2);
         }
         request->send_P(200, "text/plain", "");
@@ -170,6 +166,8 @@ void setup() {
 }
 
 void loop() {
-    updateVariables(setData(modemGSM, http, dataJson));
+    String data = "{'id':"+central_id+",'temperature_1':"+temperature_1+",'luminosity_1':"+luminosity_1+",'humidity_1':"+humidity_1+",'temperature_2':"+temperature_2+",'luminosity_2':"+luminosity_2+",'humidity_2':"+humidity_2+"}";
+    updateVariables(setData(modemGSM, http, data));
+    escrita_oled_wifi();
     delay(30000);
 }
